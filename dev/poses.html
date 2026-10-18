@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pózteszt</title>
+<style>
+  body { margin: 0; font: 13px system-ui, sans-serif; display: grid; grid-template-columns: 260px 1fr; height: 100vh; background: #eef2f5; }
+  #list { overflow: auto; padding: 8px; background: #fff; }
+  #list b { display: block; margin-top: 8px; }
+  #list button { margin: 2px; font-size: 12px; }
+  #view { position: relative; }
+  #info { position: absolute; left: 8px; top: 8px; background: #fff8; padding: 4px 8px; }
+</style>
+</head>
+<body>
+<div id="list"></div>
+<div id="view"><div id="info"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/figure.js"></script>
+<script src="../js/poses.js"></script>
+<script src="../js/stage.js"></script>
+<script>
+  const stage = new GYTStage(document.getElementById('view'));
+  window.stage = stage;
+  const list = document.getElementById('list');
+  const names = Object.fromEntries(GYT_DATA.exercises.map(e => [e.id, e.name]));
+  for (const id in GYT_POSES.EX) {
+    const b = document.createElement('b'); b.textContent = id + ' ' + (names[id] || ''); list.appendChild(b);
+    for (const side of ['L', 'R']) for (const p in GYT_POSES.EX[id].poses) {
+      if (side === 'R' && p !== 'start') continue;
+      const btn = document.createElement('button');
+      btn.textContent = p + (side === 'R' ? ' (R)' : '');
+      btn.onclick = () => show(id, p, side);
+      list.appendChild(btn);
+    }
+  }
+  function show(id, p, side) {
+    if (stage.exId !== id || stage.side !== side) stage.setExercise(id, side, { instant: true, instantCam: true, pose: p });
+    else stage.to(p, 0.8);
+    document.getElementById('info').textContent = id + ' / ' + p + ' / ' + side;
+    location.hash = id + ',' + p + ',' + side;
+  }
+  const h = location.hash.slice(1).split(',');
+  show(h[0] || 'e01', h[1] || 'start', h[2] || 'L');
+
+  // Kontaktlap: minden póz kis képként (?sheet=e01,e02 vagy ?sheet=all)
+  const q = new URLSearchParams(location.search);
+  if (q.get('sheet')) {
+    const ids = q.get('sheet') === 'all' ? Object.keys(GYT_POSES.EX) : q.get('sheet').split(',');
+    const view = document.getElementById('view');
+    document.getElementById('list').style.display = 'none';
+    document.body.style.gridTemplateColumns = '1fr';
+    const sheet = document.createElement('div');
+    sheet.style.cssText = 'position:absolute;inset:0;overflow:auto;background:#eef2f5;display:flex;flex-wrap:wrap;gap:4px;padding:4px;align-content:flex-start';
+    view.appendChild(sheet);
+    stage.renderer.setSize(360, 240, false);
+    stage.camera.aspect = 1.5; stage.camera.updateProjectionMatrix();
+    for (const id of ids) {
+      for (const p in GYT_POSES.EX[id].poses) {
+        stage.setExercise(id, q.get('side') || 'L', { instant: true, instantCam: true, pose: p });
+        stage.step(0);
+        const c = stage.fig.worldPos('pelvis').add(stage.fig.worldPos('chest')).multiplyScalar(0.5);
+        stage.controls.target.copy(c); stage.controls.update();
+        stage.renderer.render(stage.scene, stage.camera);
+        const d = document.createElement('div');
+        d.style.cssText = 'background:#fff;font-size:11px;text-align:center';
+        d.innerHTML = '<img width="360" height="240" src="' + stage.renderer.domElement.toDataURL() + '"><br>' + id + ' / ' + p;
+        sheet.appendChild(d);
+      }
+    }
+  }
+</script>
+</body>
+</html>

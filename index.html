@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gyógytorna edző</title>
+<meta name="theme-color" content="#0f766e">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><circle cx="16" cy="6" r="3.2" fill="currentColor"/><path d="M6 27 L12 17 L16 11 L20 17 L26 27 M9 15 L16 11 L23 15" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Gyógytorna edző</span>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="plan" role="tab">Edzésterv</button>
+    <button class="tab" data-view="workout" role="tab">Edzés</button>
+    <button class="tab" data-view="library" role="tab">Gyakorlatok</button>
+    <button class="tab" data-view="settings" role="tab">Beállítások</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ EDZÉSTERV ============ -->
+  <section id="view-plan" class="view active">
+    <div class="plan-layout">
+      <aside class="card settings-card">
+        <h2>Új edzésterv</h2>
+
+        <div class="field">
+          <label class="field-label">Eszközök</label>
+          <div class="seg" id="equipMode">
+            <button data-v="none" class="on">Eszköz nélkül</button>
+            <button data-v="with">Eszközökkel</button>
+          </div>
+          <div id="equipList" class="checks" hidden></div>
+          <p class="hint" id="equipHint">Csak matrac kell. A csúszkás gyakorlatokhoz zokni vagy papírlap is jó.</p>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Időtartam</label>
+          <div class="seg" id="duration">
+            <button data-v="15">~15 perc</button>
+            <button data-v="25" class="on">~25 perc</button>
+            <button data-v="40">~40 perc</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Intenzitás</label>
+          <div class="seg" id="level">
+            <button data-v="normal" class="on">Normál (a leírás szerint)</button>
+            <button data-v="gentle">Kímélő</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Fókusz <span class="muted">(opcionális)</span></label>
+          <div class="chips" id="focus"></div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="rest">Pihenő sorozatok között: <b id="restVal">25</b> mp</label>
+          <input type="range" id="rest" min="10" max="60" step="5" value="25">
+        </div>
+
+        <button class="btn primary wide" id="btnBuild">Terv készítése</button>
+      </aside>
+
+      <div class="plan-main">
+        <div id="planEmpty" class="card empty">
+          <h2>Készíts edzéstervet</h2>
+          <p>Állítsd be bal oldalt, hogy eszközzel vagy anélkül szeretnél tornázni, mennyi időd van, és mire fókuszálnál. A terv bemelegítésből, fő részből és lenyújtásból áll.</p>
+        </div>
+        <div id="planView" hidden>
+          <div class="plan-head">
+            <div>
+              <h2>Mai edzésterved</h2>
+              <p class="muted" id="planMeta"></p>
+            </div>
+            <div class="plan-actions">
+              <button class="btn" id="btnRebuild" title="Új véletlen összeállítás ugyanazokkal a beállításokkal">↻ Új összeállítás</button>
+              <button class="btn primary" id="btnStart">▶ Edzés indítása</button>
+            </div>
+          </div>
+          <div id="planPhases"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EDZÉS ============ -->
+  <section id="view-workout" class="view">
+    <div class="workout-layout">
+      <div class="stage-wrap">
+        <div class="stage-host" id="workoutStageHost"></div>
+        <div class="ov-top">
+          <span class="pill" id="wPhase">—</span>
+          <span class="ov-name" id="wName">Nincs betöltött edzés</span>
+        </div>
+        <div class="ov-counter" id="wCounter" hidden>
+          <div class="cnt"><span id="wRep">0</span><small>/<span id="wCount">0</span></small></div>
+          <div class="cnt-sub" id="wSub"></div>
+        </div>
+        <div class="ov-hold" id="wHold" hidden>
+          <svg viewBox="0 0 120 120"><circle class="ring-bg" cx="60" cy="60" r="52"/><circle class="ring" id="wRing" cx="60" cy="60" r="52"/></svg>
+          <div class="hold-num" id="wHoldNum">5</div>
+          <div class="hold-label" id="wHoldLabel">Tartsd</div>
+        </div>
+        <div class="ov-caption" id="wCaption"></div>
+        <div class="ov-start" id="wStartOverlay">
+          <div class="start-card">
+            <h2 id="wStartTitle">Készen állsz?</h2>
+            <p id="wStartText">Teríts le egy matracot, és készítsd elő a szükséges eszközöket. A hang az indítás gombra kattintva indul.</p>
+            <ul id="wEquipNeeded" class="equip-needed"></ul>
+            <button class="btn primary big" id="wGo">▶ Indítás</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="card workout-panel">
+        <div class="progress"><div class="bar" id="wProgress"></div></div>
+        <div class="controls">
+          <button class="icon-btn" id="cPrev" title="Előző gyakorlat">⏮</button>
+          <button class="icon-btn" id="cRestart" title="Gyakorlat újrakezdése">↺</button>
+          <button class="icon-btn big" id="cPlay" title="Szünet / folytatás (szóköz)">⏸</button>
+          <button class="icon-btn" id="cNext" title="Következő gyakorlat">⏭</button>
+          <button class="icon-btn" id="cStop" title="Edzés leállítása">⏹</button>
+        </div>
+        <h3 class="sect">Kiinduló helyzet</h3>
+        <p id="wSetup" class="setup-text">—</p>
+        <h3 class="sect">Végrehajtás lépésről lépésre</h3>
+        <ol id="wSteps" class="steps"></ol>
+        <p class="muted small" id="wReps"></p>
+        <h3 class="sect">Következik</h3>
+        <ol id="wQueue" class="queue"></ol>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ GYAKORLATOK ============ -->
+  <section id="view-library" class="view">
+    <div class="lib-layout">
+      <aside class="card lib-list">
+        <div class="lib-filters">
+          <select id="libPos"><option value="">Minden testhelyzet</option></select>
+          <select id="libEq">
+            <option value="">Minden gyakorlat</option>
+            <option value="none">Eszköz nélkül</option>
+            <option value="with">Eszközös</option>
+          </select>
+        </div>
+        <div id="libItems"></div>
+      </aside>
+      <div class="lib-detail">
+        <div class="stage-wrap lib-stage">
+          <div class="stage-host" id="libStageHost"></div>
+          <div class="ov-top"><span class="pill" id="libPosPill">—</span><span class="ov-name" id="libName"></span></div>
+          <div class="ov-caption" id="libCaption"></div>
+          <div class="lib-stage-ctrl">
+            <button class="btn small" id="libSide">Oldal: bal</button>
+            <button class="btn small primary" id="libVoice">🔊 Bemutatás hanggal</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="chips-row" id="libChips"></div>
+          <h3 class="sect">Kiinduló helyzet</h3>
+          <p id="libSetup"></p>
+          <h3 class="sect">Végrehajtás</h3>
+          <ol id="libSteps" class="steps"></ol>
+          <p class="muted" id="libReps"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BEÁLLÍTÁSOK ============ -->
+  <section id="view-settings" class="view">
+    <div class="settings-grid">
+      <div class="card">
+        <h2>Hang</h2>
+        <div id="voiceStatus" class="status-box"></div>
+        <div class="field">
+          <label class="field-label">Hangforrás</label>
+          <div class="seg" id="engine">
+            <button data-v="auto" class="on">Élethű hangfájlok (ha vannak)</button>
+            <button data-v="browser">Böngésző hangja</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="voiceSel">Böngészős magyar hang (tartalék)</label>
+          <select id="voiceSel"></select>
+          <p class="hint">A legélethűbb böngészős hang a Microsoft Edge „Microsoft Noémi Online (Natural)” hangja.</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="rate">Beszédtempó: <b id="rateVal">1.00</b>×</label>
+          <input type="range" id="rate" min="0.8" max="1.25" step="0.05" value="1">
+        </div>
+        <div class="field">
+          <label class="field-label" for="volume">Hangerő</label>
+          <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
+        </div>
+        <label class="check"><input type="checkbox" id="beeps" checked> Hangjelzések (sípszó, gong)</label>
+        <button class="btn" id="btnTestVoice">🔊 Hang kipróbálása</button>
+      </div>
+
+      <div class="card">
+        <h2>Vezetés</h2>
+        <div class="field">
+          <label class="field-label">Utasítások részletessége</label>
+          <div class="seg vertical" id="detail">
+            <button data-v="first" class="on">Első ismétlésnél teljes leírás, utána rövid utasítások</button>
+            <button data-v="all">Minden ismétlésnél teljes leírás</button>
+            <button data-v="short">Mindig csak rövid utasítások</button>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="prep">Felkészülési idő gyakorlat előtt: <b id="prepVal">6</b> mp</label>
+          <input type="range" id="prep" min="3" max="20" step="1" value="6">
+        </div>
+        <p class="hint">Gyorsbillentyűk edzés közben: <kbd>Szóköz</kbd> szünet/folytatás, <kbd>→</kbd> következő, <kbd>←</kbd> előző gyakorlat.</p>
+      </div>
+
+      <div class="card">
+        <h2>Fontos</h2>
+        <p>Az alkalmazás a gyógytornász által összeállított gyakorlatleírásokat követi; nem helyettesíti a szakember felügyeletét. Ha bármelyik mozdulat fájdalmat okoz, hagyd ki, és kérdezd meg a gyógytornászodat.</p>
+        <p class="muted small">A „Kiegészítő” jelölésű bemelegítő és levezető gyakorlatok (hasi légzés, térdkidöntögetés, medencebillentés, macska–tehén, gyermekpóz, térdek mellkashoz, fekvő csavarás) nem a fájlból származnak, általános gyógytornás elemek.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="js/data.js"></script>
+<script src="audio/manifest.js" onerror="window.GYT_AUDIO=null"></script>
+<script src="js/figure.js"></script>
+<script src="js/poses.js"></script>
+<script src="js/stage.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/planner.js"></script>
+<script src="js/player.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
