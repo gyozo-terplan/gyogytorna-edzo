@@ -2,6 +2,8 @@
 
 Böngészőben futó edzésvezető app a `gyógytorna_gyakorlatok.txt` gyakorlataiból.
 
+**Élő változat:** https://gyozo-terplan.github.io/gyogytorna-edzo/
+
 ## Indítás
 
 - **Windows:** dupla kattintás a `start.bat`-ra (helyi szervert indít, és megnyitja a `http://localhost:8765` címet).
